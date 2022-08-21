@@ -74,6 +74,25 @@ def get_term_output(ad_start=0, ad_end=None):
     return buffer_dump
 
 
+def post_processor(dump):
+    """
+    post processor
+    """
+    page = [
+        "<pre>",
+        "<center>",
+        f"<font face='{FONT}'>"
+        f"<div style='background-color:{BGCOLOR};line-height:12pt'>",
+        dump,
+        "</div>",
+        "</font>",
+        "</center>",
+        "</pre>",
+    ]
+    page = "\n".join(page)
+    return page
+
+
 def export_norg(file_path, out_path=None):
     """
     Handler
@@ -101,22 +120,15 @@ def export_norg(file_path, out_path=None):
 
     # post processing
     bufcnt = get_term_output() if ENABLE_PRESENTER else get_term_output(0, -2)
-    bufcnt = "\n".join(bufcnt)
-    bufcnt = [
-        "<pre>",
-        "<center>",
-        f"<font face='{FONT}'>"
-        f"<div style='background-color:{BGCOLOR};line-height:12pt'>",
-        bufcnt,
-        "</div>",
-        "</font>",
-        "</center>",
-        "</pre>",
-    ]
-    bufcnt = "\n".join(bufcnt)
-    print(out_path)
+    if ENABLE_PRESENTER:
+        pages = [post_processor(page) for page in bufcnt]
+        document = "\n\n".join(pages)
+    else:
+        bufcnt = "\n".join(bufcnt)
+        document = post_processor(bufcnt)
+
     with open(out_path, "w", encoding="utf-8") as file:
-        file.write(bufcnt)
+        file.write(document)
 
     cmdlst = [":qall!", "exit"]
     send_lines(cmdlst)
@@ -129,7 +141,7 @@ KB_INJECT = "cat term.cfg | dconf load /org/gnome/terminal/legacy/profiles:/"
 
 ENABLE_PRESENTER = False
 START_DELAY = 1
-PROCESS_DELAY = 1
+PROCESS_DELAY = 0.5
 BGCOLOR = "#282C34"
 FONT = "Fira Code"
 COLORSCHEME = None
@@ -137,10 +149,13 @@ COLORSCHEME = None
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("path")
+    parser.add_argument("--output", default=None, help="path to output")
     parser.add_argument("--font", default=FONT, help="font to set for the output")
     parser.add_argument("--bgcolor", default=BGCOLOR, help="background color to fill")
     parser.add_argument("--colorscheme", default=None, help="specify vim colorscheme")
-    parser.add_argument("--presenter", default=False, help="Enable norg presenter mode")
+    parser.add_argument(
+        "--presenter", action="store_true", help="Enable norg presenter mode"
+    )
     args = parser.parse_args()
 
     ENABLE_PRESENTER = args.presenter
@@ -148,4 +163,4 @@ if __name__ == "__main__":
     FONT = args.font
     COLORSCHEME = args.colorscheme
 
-    export_norg(args.path)
+    export_norg(args.path, args.output)

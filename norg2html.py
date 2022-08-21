@@ -1,3 +1,4 @@
+#!/bin/python3
 """
 Code to export vim screen exactly to HTML
 """
@@ -82,9 +83,12 @@ def get_term_output(ad_start=0, ad_end=None):
         buffer_dump.append(clipboard_content)
         gui.hotkey("pagedown")
 
-    dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else None
-    dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else None
-    dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else dmp
+    if len(buffer_dump) > 1:
+        dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else None
+    if len(buffer_dump) > 1:
+        dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else None
+    if len(buffer_dump) > 1:
+        dmp = buffer_dump.pop() if find_match(buffer_dump[-2]) else dmp
 
     return buffer_dump
 

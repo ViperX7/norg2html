@@ -45,7 +45,10 @@ def get_term_output(ad_start=0, ad_end=None):
         clipboard_content = "\n".join(clipboard_content)
 
         if old_clipboard_content == clipboard_content:
-            buffer_dump.pop()
+            if buffer_dump[-1] == buffer_dump[-2]:
+                buffer_dump.pop()
+            elif CUT_FIX:
+                buffer_dump.pop()
             break
         buffer_dump.append(clipboard_content)
         old_clipboard_content = clipboard_content
@@ -65,6 +68,10 @@ BGCOLOR = "#282C34"
 FILE_PATH = "../torch_1.norg"
 TERM_START_CMD = ["gnome-terminal", "--", "nvim", FILE_PATH]
 START_DELAY = 1
+ENABLE_PRESENTER = True
+CUT_FIX = not ENABLE_PRESENTER
+
+KB_INJECT = "cat term.cfg | dconf load /org/gnome/terminal/legacy/profiles:/"
 
 # Start the terminal
 out = subprocess.run(TERM_START_CMD, check=True)
@@ -72,16 +79,19 @@ gui.sleep(START_DELAY)
 
 # Conf Features
 vim_cmds = [
-    ":set nocursorcolumn nocursorline colorcolumn=10000 list! nornu! nonumber",
-    ":IndentBlanklineToggle",
-    "zR",
+    ":set nocursorcolumn nocursorline colorcolumn=10000 list! norelativenumber nonumber",  # clean some clutter
+    "zR",  # open all folds
+    ":IndentBlanklineDisable",
 ]
+
+excmds = [":Neorg presenter start"]
+vim_cmds = excmds + vim_cmds if ENABLE_PRESENTER else vim_cmds
 
 send_lines(vim_cmds)
 gui.sleep(START_DELAY)
 
 # post processing
-bufcnt = get_term_output(0, -2)
+bufcnt = get_term_output() if ENABLE_PRESENTER else get_term_output(0, -2)
 bufcnt = "\n".join(bufcnt)
 bufcnt = [
     "<pre>",

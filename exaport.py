@@ -3,6 +3,9 @@ Code to export vim screen exactly to HTML
 """
 
 import subprocess
+import tempfile
+from os import remove
+from shutil import copy
 
 import pyautogui as gui
 import pyperclip
@@ -10,7 +13,7 @@ import pyperclip
 
 def send_lines(keylist):
     """
-    Press the supplied
+    Press the supplied keys
     """
     if isinstance(keylist, str):
         gui.typewrite(keylist + "\n")
@@ -56,55 +59,59 @@ def get_term_output(ad_start=0, ad_end=None):
     return buffer_dump
 
 
-# def squash_common(data: list):
-#     result = []
-#     for i, entry in enumerate(data):
-#         if i < (len(data) - 1):
-#             for lines in entry.split("\n"):
-# print(lines)
+def export_norg():
+    # Create a copy of original norg file
+    copy(FILE_PATH, TMP_FILE_PATH)
 
-# Configurables
+    # Start the terminal
+    out = subprocess.run(TERM_START_CMD, check=True)
+    gui.sleep(START_DELAY)
+
+    # Conf Features
+    vim_cmds = [
+        ":set nocursorcolumn nocursorline colorcolumn=10000 list! norelativenumber nonumber",  # clean some clutter
+        "zR",  # open all folds
+        ":IndentBlanklineDisable",
+    ]
+
+    excmds = [":Neorg presenter start"]
+    vim_cmds = excmds + vim_cmds if ENABLE_PRESENTER else vim_cmds
+
+    send_lines(vim_cmds)
+    gui.sleep(START_DELAY)
+
+    # post processing
+    bufcnt = get_term_output() if ENABLE_PRESENTER else get_term_output(0, -2)
+    bufcnt = "\n".join(bufcnt)
+    bufcnt = [
+        "<pre>",
+        "<center>",
+        f"<font face='{FONT}'>"
+        f"<div style='background-color:{BGCOLOR};line-height:12pt'>",
+        bufcnt,
+        "</div>",
+        "</font>",
+        "</center>",
+        "</pre>",
+    ]
+    bufcnt = "\n".join(bufcnt)
+    with open("test.md", "w") as file:
+        file.write(bufcnt)
+
+    cmdlst = [":qall!", "exit"]
+    send_lines(cmdlst)
+    remove(TMP_FILE_PATH)
+
+
 BGCOLOR = "#282C34"
+_, TMP_FILE_PATH = tempfile.mkstemp(".norg")
 FILE_PATH = "../torch_1.norg"
-TERM_START_CMD = ["gnome-terminal", "--", "nvim", FILE_PATH]
-START_DELAY = 1
+TERM_START_CMD = ["gnome-terminal", "--", "nvim", TMP_FILE_PATH]
+START_DELAY = 0.5
 ENABLE_PRESENTER = True
 CUT_FIX = not ENABLE_PRESENTER
+FONT = "Fira Code"
 
 KB_INJECT = "cat term.cfg | dconf load /org/gnome/terminal/legacy/profiles:/"
-
-# Start the terminal
-out = subprocess.run(TERM_START_CMD, check=True)
-gui.sleep(START_DELAY)
-
-# Conf Features
-vim_cmds = [
-    ":set nocursorcolumn nocursorline colorcolumn=10000 list! norelativenumber nonumber",  # clean some clutter
-    "zR",  # open all folds
-    ":IndentBlanklineDisable",
-]
-
-excmds = [":Neorg presenter start"]
-vim_cmds = excmds + vim_cmds if ENABLE_PRESENTER else vim_cmds
-
-send_lines(vim_cmds)
-gui.sleep(START_DELAY)
-
-# post processing
-bufcnt = get_term_output() if ENABLE_PRESENTER else get_term_output(0, -2)
-bufcnt = "\n".join(bufcnt)
-bufcnt = [
-    "<pre>",
-    "<center>",
-    f"<div style='background-color:{BGCOLOR};line-height:12pt'>",
-    bufcnt,
-    "</div>",
-    "</center>",
-    "</pre>",
-]
-bufcnt = "\n".join(bufcnt)
-with open("test.md", "w") as file:
-    file.write(bufcnt)
-
-cmdlst = [":qall!", "exit"]
-send_lines(cmdlst)
+if __name__ == "__main__":
+    export_norg()

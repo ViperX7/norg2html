@@ -116,7 +116,7 @@ def export_norg(file_path, out_path=None):
     """
     Handler
     """
-    out_path = out_path if out_path else file_path.replace("norg", "md")
+    out_path = out_path if out_path else file_path.replace("norg", "html")
 
     # Create a copy of original norg file
     copy(file_path, TMP_FILE_PATH)

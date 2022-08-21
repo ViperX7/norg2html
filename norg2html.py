@@ -15,18 +15,14 @@ from bs4 import BeautifulSoup
 
 
 def inject_keybind():
-    term_cfg = """
-    [legacy/keybindings]
-    copy-html='<Primary>braceright'
-    select-all='<Primary>bar'
-    """
+    term_cfg = """[/]\ncopy-html='<Primary>braceright'\nselect-all='<Primary>bar'"""
 
-    _, tmp = tempfile.mkstemp(".norg")
+    _, tmp = tempfile.mkstemp(".dconf")
     with open(tmp, "w", encoding="utf-8") as file:
         file.write(term_cfg)
 
-    kb_inject = f"cat {tmp} | dconf load /org/gnome/terminal/legacy/profiles:/"
-    subprocess.run(kb_inject, shell=True, check=True)
+    kb_inject = f"dconf load /org/gnome/terminal/legacy/keybindings/ < {tmp} "
+    subprocess.check_output(kb_inject, shell=True)
 
 
 def send_lines(keylist):
@@ -183,6 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--font", default=FONT, help="font to set for the output")
     parser.add_argument("--bgcolor", default=BGCOLOR, help="background color to fill")
     parser.add_argument("--colorscheme", default=None, help="specify vim colorscheme")
+    parser.add_argument("--delay", default=START_DELAY,type=int, help="specify vim startup or load delay")
     parser.add_argument(
         "--width", type=int, default=TERM_START_WIDTH, help="specify width"
     )
@@ -197,5 +194,7 @@ if __name__ == "__main__":
     FONT = args.font
     COLORSCHEME = args.colorscheme
     TERM_START_WIDTH = args.width
+    START_DELAY = args.delay
 
     export_norg(args.path, args.output)
+    subprocess.check_output("dconf reset -f /org/gnome/terminal/legacy/keybindings/",shell=True)

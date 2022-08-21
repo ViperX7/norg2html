@@ -1,0 +1,4 @@
+pyautogui
+pyperclip
+beautifulsoup4
+lxml

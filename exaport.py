@@ -103,7 +103,15 @@ def export_norg(file_path, out_path=None):
     copy(file_path, TMP_FILE_PATH)
 
     # Start the terminal
-    subprocess.run(TERM_START_CMD, check=True)
+    if TERM_START_WIDTH:
+        term_start_post = [
+            f"stty columns {TERM_START_WIDTH}",
+            f"nvim {TMP_FILE_PATH};exit",
+        ]
+        subprocess.run(TERM_START_RAW, check=True)
+        send_lines(term_start_post)
+    else:
+        subprocess.run(TERM_START_CMD, check=True)
     gui.sleep(START_DELAY)
 
     # Conf Features
@@ -114,7 +122,9 @@ def export_norg(file_path, out_path=None):
     ]
 
     excmds = [":Neorg presenter start"]
+    colcmds = [f":colorscheme {COLORSCHEME} "]
     vim_cmds = excmds + vim_cmds if ENABLE_PRESENTER else vim_cmds
+    vim_cmds = colcmds + vim_cmds if COLORSCHEME else vim_cmds
     send_lines(vim_cmds)
     gui.sleep(PROCESS_DELAY)
 
@@ -130,18 +140,21 @@ def export_norg(file_path, out_path=None):
     with open(out_path, "w", encoding="utf-8") as file:
         file.write(document)
 
-    cmdlst = [":qall!", "exit"]
-    send_lines(cmdlst)
+    exitcmdlst = [":qall!"]
+    send_lines(exitcmdlst)
     remove(TMP_FILE_PATH)
 
 
 _, TMP_FILE_PATH = tempfile.mkstemp(".norg")
 TERM_START_CMD = ["gnome-terminal", "--", "nvim", TMP_FILE_PATH]
+TERM_START_RAW = ["gnome-terminal"]
+TERM_START_WIDTH = None
+
 KB_INJECT = "cat term.cfg | dconf load /org/gnome/terminal/legacy/profiles:/"
 
 ENABLE_PRESENTER = False
 START_DELAY = 1
-PROCESS_DELAY = 0.5
+PROCESS_DELAY = 1
 BGCOLOR = "#282C34"
 FONT = "Fira Code"
 COLORSCHEME = None
@@ -154,6 +167,9 @@ if __name__ == "__main__":
     parser.add_argument("--bgcolor", default=BGCOLOR, help="background color to fill")
     parser.add_argument("--colorscheme", default=None, help="specify vim colorscheme")
     parser.add_argument(
+        "--width", type=int, default=TERM_START_WIDTH, help="specify width"
+    )
+    parser.add_argument(
         "--presenter", action="store_true", help="Enable norg presenter mode"
     )
     args = parser.parse_args()
@@ -162,5 +178,6 @@ if __name__ == "__main__":
     BGCOLOR = args.bgcolor
     FONT = args.font
     COLORSCHEME = args.colorscheme
+    TERM_START_WIDTH = args.width
 
     export_norg(args.path, args.output)

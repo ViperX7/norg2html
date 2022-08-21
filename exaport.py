@@ -13,6 +13,21 @@ import pyperclip
 from bs4 import BeautifulSoup
 
 
+def inject_keybind():
+    term_cfg = """
+    [legacy/keybindings]
+    copy-html='<Primary>braceright'
+    select-all='<Primary>bar'
+    """
+
+    _, tmp = tempfile.mkstemp(".norg")
+    with open(tmp, "w", encoding="utf-8") as file:
+        file.write(term_cfg)
+
+    kb_inject = f"cat {tmp} | dconf load /org/gnome/terminal/legacy/profiles:/"
+    subprocess.run(kb_inject, shell=True, check=True)
+
+
 def send_lines(keylist):
     """
     Press the supplied keys
@@ -150,8 +165,6 @@ TERM_START_CMD = ["gnome-terminal", "--", "nvim", TMP_FILE_PATH]
 TERM_START_RAW = ["gnome-terminal"]
 TERM_START_WIDTH = None
 
-KB_INJECT = "cat term.cfg | dconf load /org/gnome/terminal/legacy/profiles:/"
-
 ENABLE_PRESENTER = False
 START_DELAY = 1
 PROCESS_DELAY = 1
@@ -173,6 +186,7 @@ if __name__ == "__main__":
         "--presenter", action="store_true", help="Enable norg presenter mode"
     )
     args = parser.parse_args()
+    inject_keybind()
 
     ENABLE_PRESENTER = args.presenter
     BGCOLOR = args.bgcolor

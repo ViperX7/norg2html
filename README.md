@@ -7,7 +7,7 @@ git clone https://github.com/viperx7/norg2html
 cd norg2html
 pip3 install -r requirements.txt
 mv norg2html.py ~/.local/bin/norg2html
-chomd +x ~/.local/bin/norg2html
+chmod +x ~/.local/bin/norg2html
 cd ..
 rm norg2html -r
 ```
